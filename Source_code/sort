@@ -1,0 +1,399 @@
+.data
+
+m_w:    .word 50000
+
+m_z:    .word 60000
+
+a:      .space 400      #uint32_t a[100]
+
+msg1:   .asciiz "\n Sorted array is:\n"
+
+msg2p1: .asciiz "a["
+
+msg2p2: .asciiz "]="
+
+msg2p3: .asciiz " \n"
+
+.text
+
+#————————————————–
+
+#  int main()
+
+#————————————————–
+
+main:
+
+li $s0,0            # $s0 will be used as i
+
+la $s1,a            # $s1 will have the address of a[i]
+
+for1:                   #   for(int i=0; i<100; i++)
+
+bge $s0,100,endfor1 #    {
+
+li $a0,1
+
+li $a1,100000
+
+jal random_in_range #  b = random_in_range(1,100000);
+
+sw $v0,($s1)        # a[i]=b;
+
+addi $s1,$s1,4      # advance array pointer
+
+addi $s0,$s0,1      # i++
+
+b for1              #   }
+
+endfor1:
+
+la $a0,a            # set first argument to a
+
+move $a1,$0         # set second argument to 0
+
+li $a2,99           # set third argument to 99
+
+jal quicksort       # quickSort(a,0,99);
+
+la $a0,msg1         # load address of message to print
+
+li $v0,4            # use syscall number 4, print string
+
+syscall             # printf(“\n Sorted array is:\n”);
+
+li $s0,0            # $s0 will be used as i
+
+la $s1,a            # $s1 will have the address of a[i]
+
+for2:                   #for (int i=0;i<100;i++)
+
+bge $s0,100,endfor2 # {
+
+#     printf(“a[%d]=%d \n”,i,a[i]);
+
+la $a0,msg2p1       # load address of message to print
+
+li $v0,4            # use syscall number 4, print string
+
+syscall
+
+move $a0,$s0        # load current value of i in a0
+
+li $v0,1            # use syscall number 1, print number
+
+syscall
+
+la $a0,msg2p2       # load address of message to print
+
+li $v0,4            # use syscall number 4, print string
+
+syscall
+
+lw $a0,($s1)        # load current value of i in a0
+
+li $v0,1            # use syscall number 1, print number
+
+syscall
+
+la $a0,msg2p3       # load address of message to print
+
+li $v0,4            # use syscall number 4, print string
+
+syscall
+
+addi $s1,$s1,4      # advance pointer to a[i+1]
+
+addi $s0,$s0,1      # i++
+
+b for2              # }
+
+endfor2:
+
+li $v0,10           # terminate program using syscall 10
+
+syscall
+
+#————————————————–
+
+#void quickSort( uint32_t a[], int l, int r)
+
+# On entry: a0=a[]
+
+#           a1=l
+
+#           a2=r
+
+#————————————————–
+
+quicksort:
+
+addi $sp,$sp,-20    # allocate space for saving registers in the stack
+
+sw $ra,0($sp)       # save return address register in the stack
+
+sw $s0,4($sp)       # save $s0 register in the stack
+
+sw $s1,8($sp)       # save $s1 register in the stack
+
+sw $s2,12($sp)      # save $s2 register in the stack
+
+sw $s3,16($sp)      # save $s3 register in the stack
+
+bge $a1,$a2,endif1          #   if( l < r )
+
+# {
+
+# // divide and conquer
+
+move $s0,$a0                # save value of $a0
+
+move $s1,$a1                # save value of $a1
+
+move $s2,$a2                # save value of $a2
+
+jal partition               # j = partition( a, l, r);
+
+move $s3,$v0                # save return value in $s3 (j)
+
+move $a0,$s0                # load saved value of $a0
+
+move $a1,$s1                # load saved value of $a1
+
+addi $a2,$s3,-1             # load value of j-1
+
+jal  quicksort              # quickSort( a, l, j-1);
+
+move $a0,$s0                # load saved value of $a0
+
+addi $a1,$s3,1              # load value of j+1
+
+move $a2,$s2                # load saved value of $a2
+
+jal  quicksort              # quickSort( a, j+1, r);
+
+endif1:                         # }
+
+lw $ra,0($sp)       # restore contents of $ra from the stack
+
+lw $s0,4($sp)       # restore $s0 register from the stack
+
+lw $s1,8($sp)       # restore $s1 register from the stack
+
+lw $s2,12($sp)      # restore $s2 register from the stack
+
+lw $s3,16($sp)      # restore $s3 register from the stack
+
+addi $sp,$sp,20     # restore stack pointer
+
+jr $ra
+
+#————————————————–
+
+# int partition(uint32_t a[], int l, int r) {
+
+# On entry: a0=a[]
+
+#           a1=l
+
+#           a2=r
+
+#————————————————–
+
+partition:
+
+addi $sp,$sp,-16    # allocate space for saving registers in the stack
+
+sw $ra,0($sp)       # save return address register in the stack
+
+sw $s0,4($sp)       # save $s0 register in the stack
+
+sw $s1,8($sp)       # save $s1 register in the stack
+
+sw $s2,12($sp)      # save $s2 register in the stack
+
+sll $t4,$a1,2       # multiply l by 4 to get offset in array
+
+add $t4,$t4,$a0     # get address of a[l] in t4
+
+lw  $s0,($t4)       # pivot = a[l]; $s0 will be pivot
+
+move $s1,$a1        # i = l;  $s1 will be i
+
+addi $s2,$a2,1      # j = r+1;  $s2 will be j
+
+while1:                 # while( 1)
+
+# {
+
+do1:                    # do
+
+addi $s1,$s1,1      #   ++i;
+
+sll $t1,$s1,2       # multiply i by 4 to get offset in array
+
+add $t1,$t1,$a0     # get address of a[i] in t1
+
+lw  $t0,($t1)       # $t0 = a[i]
+
+bgt $t0,$s0,do2     # while( a[i] <= pivot && i <= r );
+
+bgt $s1,$a2,do2
+
+b   do1
+
+do2:                    # do
+
+addi $s2,$s2,-1     # –j;
+
+sll $t2,$s2,2       # multiply j by 4 to get offset in array
+
+add $t2,$t2,$a0     # get address of a[j] in t2
+
+lw  $t0,($t2)       # $t0 = a[j]
+
+bgt $t0,$s0,do2     # while( a[j] > pivot );
+
+bge $s1,$s2,brk1    # if( i >= j ) break;
+
+lw $t0,($t1)        # t = a[i];
+
+lw $t3,($t2)        # a[i] = a[j];
+
+sw $t3,($t1)
+
+sw $t0,($t2)        # a[j] = t;
+
+b while1            # }
+
+brk1:
+
+lw $t0,($t4)        # t = a[l];
+
+lw $t3,($t2)        # a[l] = a[j];
+
+sw $t3,($t4)
+
+sw $t0,($t2)        # a[j] = t;
+
+move $v0,$s2        # return j;
+
+lw $ra,0($sp)       # restore contents of $ra from the stack
+
+lw $s0,4($sp)       # restore $s0 register from the stack
+
+lw $s1,8($sp)       # restore $s1 register from the stack
+
+lw $s2,12($sp)      # restore $s2 register from the stack
+
+addi $sp,$sp,16     # restore stack pointer
+
+jr $ra
+
+#————————————————–
+
+# uint32_t random_in_range(uint32_t low, uint32_t high)
+
+# On entry: a0=low
+
+#           a1=high
+
+# On return: v0 = random integer in the given range
+
+#————————————————–
+
+random_in_range:
+
+addi $sp,$sp,-8     # allocate space for saving registers in the stack
+
+sw $ra,0($sp)       # save return address register in the stack
+
+sw $s0,4($sp)       # save $s0 register in the stack
+
+sub $s0,$a1,$a0     # uint32_t range = high-low+1;
+
+addi $s0,$s0,1      # s0 will hold range
+
+jal get_random      # uint32_t rand_num = get_random();
+
+divu $v0,$s0         # return (rand_num % range) + low;
+
+mfhi $v0            # get modulus rand_num % range
+
+add $v0,$v0,$a0     # add low
+
+lw $ra,0($sp)       # restore contents of $ra from the stack
+
+lw $s0,4($sp)       # restore $s0 register from the stack
+
+addi $sp,$sp,8     # restore stack pointer
+
+jr $ra
+
+#————————————————–
+
+# uint32_t get_random()
+
+# On return: $v0 = random number
+
+#————————————————–
+
+get_random:
+
+# calculate m_z = 36969 * (m_z & 65535) + (m_z >> 16);
+
+li $t0,36969        # load immediate 36969 in t0
+
+la $t1,m_z          # load address of m_z in $t1
+
+lw $t2,($t1)        # load m_z value in $t2
+
+andi $t3,$t2,65535  # calculate m_z & 65535
+
+multu $t0,$t3       # calculate 36969 * (m_z & 65535)
+
+mflo $t0            # move multiplication result to t0
+
+srl $t3,$t2,16      # calculate m_z >> 16
+
+addu $t0,$t0,$t3    # calculate complete expr.: 36969 * (m_z & 65535) + (m_z >> 16);
+
+sw $t0,($t1)        # save result in m_z
+
+# calculate m_w = 18000 * (m_w & 65535) + (m_w >> 16);
+
+li $t0,18000        # load immediate 18000 in t0
+
+la $t1,m_w          # load address of m_w in $t1
+
+lw $t2,($t1)        # load m_w value in $t2
+
+andi $t3,$t2,65535  # calculate m_w & 65535
+
+multu $t0,$t3       # calculate 18000 * (m_w & 65535)
+
+mflo $t0            # move multiplication resut to t0
+
+srl $t3,$t2,16      # calculate m_w >> 16
+
+addu $t0,$t0,$t3    # calculate complete expression: 18000 * (m_w & 65535) + (m_w >> 16);
+
+sw $t0,($t1)        # save result in m_w
+
+la $t0,m_z          # get address of m_z in t0
+
+lw $t0,($t0)        # t0 = m_z
+
+la $t1,m_w          # get address of m_w in t1
+
+lw $t1,($t1)        # t1 = m_w
+
+# calculate result = (m_z << 16) + m_w;  /* 32-bit result */
+
+sll $t0,$t0,16      # calculate m_z << 16
+
+addu $t0,$t0,$t1    # calculate complete result (m_z << 16) + m_w
+
+move $v0,$t0        # return result;
+
+jr $ra

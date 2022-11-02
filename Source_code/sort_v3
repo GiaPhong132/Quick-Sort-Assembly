@@ -1,0 +1,133 @@
+###
+### YOUR NAME HERE
+### 
+### CSE 378 Spring 2010 HW2
+### 
+### Template for testing Quicksort 
+###
+### Add your code at the two indicated locations! Turn in the whole
+### file when you're done.
+### 
+### Remember to put your name in the comment at the top of your turn-in file.
+###
+
+
+	
+###
+### Test data
+###
+### modify this for testing.
+### note that we will test with a number of arrays.
+### 
+
+        .data   
+
+	##  word array of signed values for sorting. make sure length matches value below.
+array:  .word 0x10, 0x12615, 0x9817, 0x9911177, 0x8736,0xFFFFFFFF, 0x91827, 0x80000000, 0xFFFFF000
+
+	## number of elements in array. make sure this matches the count above.
+size:	.word 9
+
+	
+
+
+        .text
+        .globl main
+main:
+	##
+	## Main program entry
+	##
+	addi    $sp, $sp, -4     # allocate stack
+	sw      $ra, 0($sp)      # save return address
+
+	## get quicksort arguments
+	la	$a0, array	# pointer to unsorted array
+	li	$a1, 0		# leftmost array element to sort
+	la	$a2, size	# pointer to size (to compute rightmost)
+	lw	$a2, 0($a2)	# value of size (to compute rightmost)
+	addiu	$a2, $a2, -1	# rightmost array element to sort
+	jal	quicksort	# call quicksort
+
+	
+	## 
+        ## pointer to sorted array is returned in $v0
+        ## after function returns, print sorted numbers
+        ## 
+        la	$t0, array      # pointer to sorted array
+	la	$t1, size       # address of number of elements expected
+	lw	$t1, 0($t1)	# number of elements expected
+	sll	$t1, $t1, 2	# convert to byte count
+	add	$t1, $t1, $t0	# convert to pointer
+main_print_loop:
+        lw      $a0, 0($t0)     # get element
+        beq     $t0, $t1, main_exit  # we're done when we've looked at all elements
+        li      $v0, 1          # print integer
+        syscall			# execute!
+        li      $a0, 0x0a       # newline
+        li      $v0, 11         # print character
+        syscall			# execute!
+        addi    $t0, $t0, 4     # increment pointer in delay slot
+		j       main_print_loop # loop!
+        
+	##
+	## main exit
+	##
+main_exit:
+	lw      $ra, 0($sp)     # restore return address
+	addi    $sp, $sp, 4     # pop stack
+	jr      $ra             # return
+        
+
+### 
+### void swap(int* array, int i, int j);
+### $a0 holds a pointer to the array
+### $a1 holds the array index of one element to swap
+### $a2 holds the array index of the other element to swap
+###
+swap:
+	addiu $sp, $sp, -4
+	sw $ra, 0($sp)
+
+	sll $a1, $a1, 2 	# convert to byte offset
+	add $a1, $a1, $a0	# convert to word address
+
+	sll $a2, $a2, 2 	# convert to byte offset
+	add $a2, $a2, $a0	# convert to word address
+
+	## swap
+	lw $t1, 0($a1)
+	lw $t2, 0($a2)
+	sw $t2, 0($a1)
+	sw $t1, 0($a2)
+
+	## return
+	lw $ra, 0($sp)
+	addiu $sp, $sp, 4
+	jr $ra
+	
+
+### 
+### void quicksort(int* array, int p, int q);
+###
+quicksort:
+
+        ##
+        ## TODO: write your code here!
+        ##
+        
+	jr $ra
+
+
+### 
+### int partition(int* array, int p, int q);
+### $a0 holds a pointer to the array
+### $a1 holds the array index of the leftmost element to consider
+### $a1 holds the array index of the rightmost element to consider
+
+partition:
+
+        ##
+        ## TODO: write your code here!
+        ##
+
+	jr $ra
